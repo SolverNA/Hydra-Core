@@ -4,120 +4,130 @@
 </h3>
 
 # Technical Specifications: Project "Hydra-Core"
-**Version:** 1.0 (Draft)  
-**Status:** Conceptual Design  
-**Stack:** Rust (Core), Kotlin/Java (Android/Desktop), Swift (iOS/macOS), JSON (Configs)  
+**Version:** 1.0 (Stable Concept / Adaptive Implementation)  
+**Status:** Active Counter-Censorship Architecture Design  
+**Stack:** Rust (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
 **License:** MIT
 
 ---
 
-## 1. General Concept Overview
-**Hydra-Core** is a cross-platform library and suite of applications designed to bypass **state-level DPI (Deep Packet Inspection)** and **ISP-level censorship systems**.
+## 1. General Concept & Philosophy
+**Hydra-Core** is an intelligent, cross-platform framework designed to bypass **State-level DPI (Deep Packet Inspection)** and **ISP-level censorship nodes (e.g., National Firewall hardware)**.
 
-**Key Innovation:** Unlike passive bypass tools, Hydra-Core utilizes an **Active Resource Exhaustion** strategy. The application simulates the behavior of a high-load home router, generating a mix of legitimate user traffic and "garbage" sessions. These sessions force **government censorship nodes** to perform expensive computational operations, leading to their throttling or complete failure (fail-open).
+**Key Innovation:** A paradigm shift from passive evasion to a strategy of **"Computational Asymmetry."** Instead of simple masking, Hydra-Core exploits the finite nature of hardware resources (SRAM/TCAM) and CPU cycles within DPI nodes. Utilizing a high-performance Rust core, the application identifies vulnerabilities in the censor’s packet reassembly and defragmentation algorithms. It forces the DPI to expend 100–1000x more computational power to analyze a session than the client spends generating it. The ultimate goal is to force the DPI into **Fail-Open mode** (where it ceases analysis and permits all traffic due to resource exhaustion).
 
 ---
 
 ## 2. System Architecture
 
-### 2.1. Abstraction Layers
-The project is divided into three layers:
-1.  **L3/L4 Core (Rust):** Low-level packet processing, defragmentation logic, and noise generator.
-2.  **Orchestrator (Rust + FFI):** Logic for managing JSON configs, link quality monitoring (Health-checks), and strategy selection.
-3.  **Platform Wrapper (Java/Kotlin/Swift):** OS-level VPN interface, UI, and application lifecycle.
-
-### 2.2. Network Interaction
-The application creates a virtual network interface (**TUN/TAP**). All device traffic is routed into the Rust core.
-* **Inbound:** Raw packets captured from OS applications.
-* **Processing:** The core analyzes the packet (L3/L4), applies evasion modifications (Split, Desync, Fake DNS), and injects "parasitic" traffic.
-* **Outbound:** The modified stream is transmitted via standard OS sockets to bypass **ISP filtering boxes**.
+### 2.1. Multi-Layer Abstraction
+1.  **L3/L4 Adaptive Core (Rust):** Direct manipulation of raw packets via Raw Sockets/TUN.
+    * **Jitter-Buffer Module:** Injects micro-delays to bypass hardware defragmentation timers.
+    * Custom TCP/UDP stack implementation to generate invalid but "enticing" states for the DPI engine.
+2.  **Strategy Hunter Engine (Rust):** Dynamic fuzzing of parameters (TTL, Split-position, Window Size).
+    * Feedback Loop driven by RTT analysis and RST packet fingerprinting.
+3.  **Orchestrator & FFI:** Lifecycle management of evasion strategies.
+    * Anonymized synchronization of "winning" presets via the Hydra-Net gossip protocol.
+4.  **Platform Wrappers:**
+    * **Android:** VpnService + JNI (zero-copy performance).
+    * **iOS:** NetworkExtension + PacketTunnelProvider.
+    * **Desktop:** Wintun (Windows) / UTUN (macOS) / TUN (Linux).
 
 ---
 
 ## 3. Core Technical Specification (Rust)
 
-### 3.1. Packet Manipulation Module (DPI-Evasion)
-Implementation of advanced evasion logic in memory-safe Rust:
-* **TCP Segment Splitting:** Fragmenting the SNI request into parts (e.g., 1 byte + remainder) to prevent the **State DPI** from reassembling the header in time.
-* **Window Size Manipulation:** Setting an extremely small window size to force the censor's hardware to work harder to parse the traffic.
-* **HTTP/TLS Desync:** Sending fake packets with incorrect checksums or expired TTLs. These are ignored by the destination server but are processed by **censorship boxes**, desynchronizing their state machine.
+### 3.1. Surgical Manipulation Module (DPI-Evasion)
+Exploiting the logic of **TCP Reassembly**:
+* **Lazy Fragmentation:** Splitting the SNI into tiny segments (e.g., 1–2 bytes) with artificial delays ($delay > 100ms$). This forces the DPI to either drop legitimate traffic (causing public outcry) or permit segments without full reassembly.
+* **Overlapping Segments:** Sending TCP segments with overlapping Sequence Numbers; the first contains "garbage," while the second contains the payload. Flawed DPI implementations will analyze the garbage while the destination server accepts the valid data.
+* **Multi-TTL Desync:** Injecting fake HTTP/TLS packets with precise TTL values that allow them to reach the DPI node but "die" (expire) before reaching the target server.
 
-### 3.2. Stress Engine (Load Generator)
-The core component. To minimize the impact on user $bandwidth$, we utilize **CPU-intensive** attacks against the **National Firewall infrastructure**:
-* **TLS Handshake Flood:** Generating thousands of short sessions with valid TLS fingerprints (Firefox/Chrome) that terminate immediately after the *Client Hello*. The censorship node is forced to store the state of each session in its memory.
-* **QUIC Churn:** Generating UDP packets simulating the QUIC protocol. Encrypted QUIC is computationally difficult for **State-level DPI** to analyze; a mass influx of these sessions causes classification algorithm overloads.
-* **Entropy Attack:** Sending packets with high entropy (appearing as encrypted traffic) to force the censor to apply heavy heuristics for protocol identification.
+### 3.2. Advanced Stress Engine (Resource Exploitation)
+Targeting hardware bottlenecks rather than raw bandwidth:
+* **SRAM State Exhaustion:** Generating thousands of `uTLS` (Client Hello) sessions with valid modern browser fingerprints. This saturates the DPI's State Tables, triggering aggressive LIFO-drops that degrade the censor's overall filtering quality.
+* **QUIC-Spin & Entropy Attack:**
+    * Manipulating the `Spin Bit` in QUIC to disorient network quality monitoring algorithms.
+    * **Adaptive Padding:** Dynamically resizing QUIC UDP packets (1200–1450 bytes) to mimic video streaming and bypass packet-length heuristics.
+* **Zero-Window Attack:** Simulating client congestion via TCP Window Size = 0, forcing the DPI to hold the session context in memory for the maximum possible duration.
 
-### 3.3. "Virtual Router" Model
-To mask its signature against behavioral analysis, the Rust core:
-* Randomizes the **TTL** (Time To Live) field for different streams (simulating multiple devices behind a NAT).
-* Uses various **TCP Fingerprints** (different header sizes, SACK options, Window Scale) for parallel connections.
-* Mixes traffic: 20% real user data, 80% "smart noise" designed to stress the **ISP-level filter**.
-
----
-
-## 4. Automation System and JSON Configs
-
-### 4.1. Strategy Structure
-The configuration allows logic updates without rebuilding the application, enabling rapid response to new **censorship signatures**.
-```json
-{
-  "provider_id": "ISP_GLOBAL_ID",
-  "strategies": [
-    {
-      "name": "aggressive_streaming_fix",
-      "target_hosts": ["video-platform.com", "service.com"],
-      "evasion": {
-        "split_pos": 2,
-        "method": "fake_packet",
-        "payload_type": "tls_v1.3"
-      },
-      "stress": {
-        "enabled": true,
-        "threads": 4,
-        "mode": "handshake_flood"
-      }
-    }
-  ]
-}
-```
-
-### 4.2. Strategy Hunter
-An automated search algorithm that:
-1.  Fetches base configs from a remote repository.
-2.  Pings "beacons" (Telegram, Google, Cloudflare).
-3.  If latency exceeds 500ms or packet loss is detected, it begins brute-forcing evasion parameters.
-4.  Upon finding a working combination, it saves it locally and shares it anonymously with the network.
+### 3.3. "Phantom Router" Model
+Simulating a multi-device NAT environment to mask signatures:
+* **Fingerprint Rotation:** Each parallel session uses a unique set of TCP options (MSS, SACK_PERM, TSopt), mimicking various OS environments (Windows, iPhone, Android).
+* **TTL Randomization:** Randomizing TTL within a $\pm 3$ range to simulate complex internal network topologies.
 
 ---
 
-## 5. Platform Implementation
+## 4. "Strategy Hunter" Algorithm (Intellectual Evasion)
 
-### 5.1. Android (Java/Kotlin)
-* Utilizes `VpnService` API to route global traffic.
-* Passes the TUN file descriptor (FD) to the Rust core via JNI for high-performance processing.
+An adaptive module based on evolutionary search principles.
 
-### 5.2. iOS (Swift + Rust)
-* Utilizes `NetworkExtension` (Packet Tunnel Provider).
-* **Power Management:** The "Stress Engine" is throttled based on battery state to prevent the OS from killing the extension for high energy usage.
+### 4.1. Feedback Loop & Detection
+Differentiating between block types:
+1.  **Active RST:** If the `Sequence Number` in an incoming RST does not match the expected window—it is a DPI injection. The Hunter measures the Delta RTT; if Delta < 10ms, the censor is physically "close" (at the ISP level).
+2.  **Silent Drop:** Detected via a lack of ACKs after a series of retransmits.
+3.  **Throttling:** Detected by comparing L4 RTT (SYN-ACK) vs. L7 RTT (TLS Finished).
 
-### 5.3. Desktop (Windows/Linux)
-* **Windows:** Uses the `Wintun` driver for low-latency interface creation.
-* **UI:** A JavaFX-based dashboard to visualize real-time bypass efficiency and **DPI load levels**.
+### 4.2. "Gap" Discovery Method
+1.  **Probe Phase:** Attempting a connection with `split_pos = 2`. On failure, the algorithm iterates through positions.
+2.  **Desync Calibration:** Running a traceroute to the target host to determine the exact hop where the **State-level DPI box** resides. The system sets `fake_ttl = current_hop - 1`.
+3.  **QUIC Migration:** If UDP packet loss exceeds 15%, the Hunter initiates `Connection Migration`, changing the port and CID to reset the DPI's analysis context.
+
+### 4.3. Hydra-Net (Anonymous Exchange)
+Discovered strategies are exchanged via **Probabilistic Gossiping**:
+* Nodes share hash tables of the form `{ASN_ID: Strategy_Hash}`.
+* Data is transmitted via steganographic channels (e.g., in request headers to trusted Beacon hosts) or public JSON repositories.
+
+---
+
+## 5. Platform Implementation Details
+
+### 5.1. Mobile (Android/iOS)
+* **Battery-Aware Stress:** The engine automatically throttles activity if battery level is < 20% or if the CPU overheats, shifting to a passive "Stealth" mode.
+* **JNI Efficiency:** On Android, the TUN file descriptor is passed directly to Rust via `std::os::unix::io::FromRawFd`, eliminating buffer copying between the JVM and native code.
+
+### 5.2. Desktop (Windows/Linux/macOS)
+* **Wintun Layer:** Utilizing the fastest available Windows driver for throughput up to 10 Gbps.
+* **Visual Debugger:** A JavaFX dashboard displaying the "Battle Map": estimated DPI load, current evasion strategy, and route health.
 
 ---
 
 ## 6. Roadmap (Milestones)
 
-* **Phase 1: Ignition (0-2 months):** Core Rust development, TUN implementation, and basic CLI for Linux.
-* **Phase 2: Infection (2-4 months):** **Stress Engine** deployment (TLS flood) and Android JNI bridge.
-* **Phase 3: Hydra (4-6 months):** Strategy Hunter automation and iOS NetworkExtension support.
-* **Phase 4: Global Impact (6+ months):** Crate publication and scaling the network to achieve critical mass (100k+ nodes).
+* **Phase 1: Foundation (0-2 months):** Rust core with `uTLS` support and basic defragmentation. CLI version release.
+* **Phase 2: Tactical (2-4 months):** Strategy Hunter implementation and TTL calibration. Android VpnService integration.
+* **Phase 3: Resilience (4-6 months):** QUIC-Stealth and Connection Migration modules. iOS NetworkExtension support.
+* **Phase 4: Critical Mass (6+ months):** Hydra-Net launch for anonymous config sharing. Goal: 100k nodes to test the "Fail-Open" hypothesis on national segments.
 
 ---
 
-## 7. Philosophy and Legal Disclaimer
-**Hydra-Core** is a research tool for studying network resilience against aggressive censorship. The developers are not responsible for usage that violates local regulations. We maintain that **freedom of information is a fundamental human right**, and technical countermeasures against **State-level DPI** are a necessary form of digital self-defense.
+## 7. Risks & Mitigation
+1.  **Risk: Whitelisting (Default Deny).** *Mitigation:* Support for **Domain Fronting** and mimicry of approved protocols (tunneling within TLS sessions to trusted CDNs).
+2.  **Risk: PPS Limiting (Packet Rate Caps).** *Mitigation:* Hunter adapts noise intensity to stay below the ISP's filtering threshold ("Last Mile Protection").
+
+---
+
+**Structure of the "QUIC-Stealth" config**
+```json
+{
+  "protocol": "QUIC/UDP",
+  "evasion_level": "surgical",
+  "padding": "dynamic_range_1200_1450",
+  "spin_bit": "chaos_mode",
+  "migration_trigger": "loss_15pct",
+  "fake_initials": 50
+}
+```
+
+---
+
+## Philosophy and Legal Disclaimer
+
+**Conclusion:** Hydra-Core is more than an unblocking tool; it is an instrument designed to make censorship **financially unsustainable**. We shift the cost of blocking from civil society onto the budgets of censorship agencies by forcing their hardware to its physical limits.
+
+*Disclaimer: Project Hydra-Core is created as a research tool for studying network resilience. The developers are not responsible for usage that violates local regulations. We maintain that **freedom of information is a fundamental human right**, and technical countermeasures against State-level DPI are a necessary form of digital self-defense.*
+
+**Freedom is not a permission; it is the technical impossibility of a ban.**
 
 ---
 
