@@ -4,6 +4,11 @@
 </h3>
 
 # Technical Specifications: Project "Hydra-Core"
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Language: Rust](https://img.shields.io/badge/Language-Rust-orange.svg)
+![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20Windows%20|%20Linux-blue.svg)
+![Status: Concept/Alpha](https://img.shields.io/badge/Status-Active%20Research-green.svg)
+
 **Version:** 1.0 (Stable Concept / Adaptive Implementation)  
 **Status:** Active Counter-Censorship Architecture Design  
 **Stack:** Rust (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
