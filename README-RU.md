@@ -5,13 +5,13 @@
 
 # Техническое задание: Проект: "Hydra-Core"
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Language: Rust](https://img.shields.io/badge/Language-Rust-orange.svg)
+![Language: Go](https://img.shields.io/badge/Language-Go-orange.svg)
 ![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20Windows%20|%20Linux-blue.svg)
 ![Status: Concept/Alpha](https://img.shields.io/badge/Status-Active%20Research-green.svg)
 
 **Версия:** 1.0 (Stable Concept / Adaptive Implementation)  
 **Статус:** Проектирование архитектуры активного противодействия  
-**Стек:** Rust (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
+**Стек:** Go (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
 **Лицензия:** MIT
 
 ---
@@ -19,17 +19,17 @@
 ## 1. Общее описание и Философия
 **Hydra-Core** — это интеллектуальный кроссплатформенный фреймворк для обхода систем глубокого анализа пакетов (DPI) и ТСПУ (Технических Средств Противодействия Угрозам). 
 
-**Ключевая инновация:** Переход от пассивного обхода к стратегии **«Вычислительной асимметрии»**. Вместо простой маскировки, Hydra-Core эксплуатирует конечность ресурсов памяти (SRAM/TCAM) и процессорного времени DPI-узлов. Используя Rust-ядро, приложение находит «бреши» в алгоритмах дефрагментации и сборки пакетов цензора, заставляя его тратить в 100–1000 раз больше ресурсов на анализ одной сессии, чем тратит клиент на её генерацию. Цель — принуждение DPI к переходу в режим **Fail-Open** (пропуск трафика без анализа при перегрузке).
+**Ключевая инновация:** Переход от пассивного обхода к стратегии **«Вычислительной асимметрии»**. Вместо простой маскировки, Hydra-Core эксплуатирует конечность ресурсов памяти (SRAM/TCAM) и процессорного времени DPI-узлов. Используя Go-ядро, приложение находит «бреши» в алгоритмах дефрагментации и сборки пакетов цензора, заставляя его тратить в 100–1000 раз больше ресурсов на анализ одной сессии, чем тратит клиент на её генерацию. Цель — принуждение DPI к переходу в режим **Fail-Open** (пропуск трафика без анализа при перегрузке).
 
 ---
 
 ## 2. Системная архитектура
 
 ### 2.1. Многоуровневое разделение
-1.  **L3/L4 Adaptive Core (Rust):** Прямая манипуляция сырыми пакетами (Raw Sockets/TUN).
+1.  **L3/L4 Adaptive Core (Go):** Прямая манипуляция сырыми пакетами (Raw Sockets/TUN).
     * Модуль **Jitter-Buffer**: внесение микрозадержек для обхода аппаратных таймеров дефрагментации.
     * Реализация кастомного стека TCP/UDP для генерации невалидных, но «аппетитных» для DPI состояний.
-2.  **Strategy Hunter Engine (Rust):** Динамический фаззинг параметров (TTL, Split-position, Window Size).
+2.  **Strategy Hunter Engine (Go):** Динамический фаззинг параметров (TTL, Split-position, Window Size).
     * Обратная связь (Feedback Loop) через анализ RTT и типов RST-пакетов.
 3.  **Orchestrator & FFI:** Управление жизненным циклом стратегий. 
     * Анонимизированная синхронизация «победных» пресетов через Hydra-Net.
@@ -39,7 +39,7 @@
   
 ---
 
-## 3. Техническая спецификация Core (Rust)
+## 3. Техническая спецификация Core (Go)
 
 ### 3.1. Модуль хирургической манипуляции (DPI-Evasion)
 Реализация методов, эксплуатирующих логику **TCP Reassembly**:
@@ -87,7 +87,7 @@
 
 ### 5.1. Мобильные платформы (Android/iOS)
 * **Battery-Aware Stress:** Stress Engine автоматически снижает активность при уровне заряда < 20% или при перегреве CPU, переходя в режим чистой мимикрии (VLESS-like).
-* **JNI Efficiency:** На Android дескриптор TUN передается напрямую в Rust через `std::os::unix::io::FromRawFd`, минуя копирование буферов между Java и C.
+* **JNI Efficiency:** На Android дескриптор TUN передается напрямую в Go через `os.NewFile`, минуя копирование буферов между Java и C.
 
 ### 5.2. Desktop (Windows/Linux/macOS)
 * **Wintun Layer:** Использование самого быстрого драйвера для Windows, обеспечивающего пропускную способность до 10 Гбит/с.
@@ -97,7 +97,7 @@
 
 ## 6. Роадмап (Milestones)
 
-* **Phase 1: Foundation (0-2 мес):** Rust-ядро с поддержкой `uTLS` и базовой дефрагментации. CLI-версия.
+* **Phase 1: Foundation (0-2 мес):** Go-ядро с поддержкой `uTLS` и базовой дефрагментации. CLI-версия.
 * **Phase 2: Tactical (2-4 мес):** Реализация Strategy Hunter и калибровки TTL. Интеграция с Android VpnService.
 * **Phase 3: Resilience (4-6 мес):** Модуль QUIC-Stealth и Connection Migration. iOS NetworkExtension.
 * **Phase 4: Critical Mass (6+ мес):** Запуск Hydra-Net для анонимного обмена конфигами. Старт программы «100к узлов» для тестирования гипотезы Fail-Open на национальных сегментах.
