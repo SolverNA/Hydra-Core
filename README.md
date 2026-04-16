@@ -89,7 +89,7 @@ Discovered strategies are exchanged via **Probabilistic Gossiping**:
 
 ### 5.1. Mobile (Android/iOS)
 * **Battery-Aware Stress:** The engine automatically throttles activity if battery level is < 20% or if the CPU overheats, shifting to a passive "Stealth" mode.
-* **JNI Efficiency:** On Android, the TUN file descriptor is passed directly to Go via `std::os::unix::io::FromRawFd`, eliminating buffer copying between the JVM and native code.
+* **JNI Efficiency:** On Android, the TUN file descriptor is passed directly to Go via `os.NewFile`, eliminating buffer copying between the JVM and native code.
 
 ### 5.2. Desktop (Windows/Linux/macOS)
 * **Wintun Layer:** Utilizing the fastest available Windows driver for throughput up to 10 Gbps.

@@ -87,7 +87,7 @@
 
 ### 5.1. Мобильные платформы (Android/iOS)
 * **Battery-Aware Stress:** Stress Engine автоматически снижает активность при уровне заряда < 20% или при перегреве CPU, переходя в режим чистой мимикрии (VLESS-like).
-* **JNI Efficiency:** На Android дескриптор TUN передается напрямую в Go через `std::os::unix::io::FromRawFd`, минуя копирование буферов между Java и C.
+* **JNI Efficiency:** На Android дескриптор TUN передается напрямую в Go через `os.NewFile`, минуя копирование буферов между Java и C.
 
 ### 5.2. Desktop (Windows/Linux/macOS)
 * **Wintun Layer:** Использование самого быстрого драйвера для Windows, обеспечивающего пропускную способность до 10 Гбит/с.
