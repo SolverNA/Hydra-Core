@@ -5,13 +5,13 @@
 
 # Technical Specifications: Project "Hydra-Core"
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
-![Language: Rust](https://img.shields.io/badge/Language-Rust-orange.svg)
+![Language: Go](https://img.shields.io/badge/Language-Go-orange.svg)
 ![Platform: Cross-Platform](https://img.shields.io/badge/Platform-Android%20|%20iOS%20|%20Windows%20|%20Linux-blue.svg)
 ![Status: Concept/Alpha](https://img.shields.io/badge/Status-Active%20Research-green.svg)
 
 **Version:** 1.0 (Stable Concept / Adaptive Implementation)  
 **Status:** Active Counter-Censorship Architecture Design  
-**Stack:** Rust (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
+**Stack:** Go (Core/Logic), Kotlin (Android), Swift (iOS), JavaFX (Desktop), TOML/JSON (Dynamic Configs)  
 **License:** MIT
 
 ---
@@ -19,17 +19,17 @@
 ## 1. General Concept & Philosophy
 **Hydra-Core** is an intelligent, cross-platform framework designed to bypass **State-level DPI (Deep Packet Inspection)** and **ISP-level censorship nodes (e.g., National Firewall hardware)**.
 
-**Key Innovation:** A paradigm shift from passive evasion to a strategy of **"Computational Asymmetry."** Instead of simple masking, Hydra-Core exploits the finite nature of hardware resources (SRAM/TCAM) and CPU cycles within DPI nodes. Utilizing a high-performance Rust core, the application identifies vulnerabilities in the censor’s packet reassembly and defragmentation algorithms. It forces the DPI to expend 100–1000x more computational power to analyze a session than the client spends generating it. The ultimate goal is to force the DPI into **Fail-Open mode** (where it ceases analysis and permits all traffic due to resource exhaustion).
+**Key Innovation:** A paradigm shift from passive evasion to a strategy of **"Computational Asymmetry."** Instead of simple masking, Hydra-Core exploits the finite nature of hardware resources (SRAM/TCAM) and CPU cycles within DPI nodes. Utilizing a high-performance Go core, the application identifies vulnerabilities in the censor’s packet reassembly and defragmentation algorithms. It forces the DPI to expend 100–1000x more computational power to analyze a session than the client spends generating it. The ultimate goal is to force the DPI into **Fail-Open mode** (where it ceases analysis and permits all traffic due to resource exhaustion).
 
 ---
 
 ## 2. System Architecture
 
 ### 2.1. Multi-Layer Abstraction
-1.  **L3/L4 Adaptive Core (Rust):** Direct manipulation of raw packets via Raw Sockets/TUN.
+1.  **L3/L4 Adaptive Core (Go):** Direct manipulation of raw packets via Raw Sockets/TUN.
     * **Jitter-Buffer Module:** Injects micro-delays to bypass hardware defragmentation timers.
     * Custom TCP/UDP stack implementation to generate invalid but "enticing" states for the DPI engine.
-2.  **Strategy Hunter Engine (Rust):** Dynamic fuzzing of parameters (TTL, Split-position, Window Size).
+2.  **Strategy Hunter Engine (Go):** Dynamic fuzzing of parameters (TTL, Split-position, Window Size).
     * Feedback Loop driven by RTT analysis and RST packet fingerprinting.
 3.  **Orchestrator & FFI:** Lifecycle management of evasion strategies.
     * Anonymized synchronization of "winning" presets via the Hydra-Net gossip protocol.
@@ -40,7 +40,7 @@
 
 ---
 
-## 3. Core Technical Specification (Rust)
+## 3. Core Technical Specification (Go)
 
 ### 3.1. Surgical Manipulation Module (DPI-Evasion)
 Exploiting the logic of **TCP Reassembly**:
@@ -89,7 +89,7 @@ Discovered strategies are exchanged via **Probabilistic Gossiping**:
 
 ### 5.1. Mobile (Android/iOS)
 * **Battery-Aware Stress:** The engine automatically throttles activity if battery level is < 20% or if the CPU overheats, shifting to a passive "Stealth" mode.
-* **JNI Efficiency:** On Android, the TUN file descriptor is passed directly to Rust via `std::os::unix::io::FromRawFd`, eliminating buffer copying between the JVM and native code.
+* **JNI Efficiency:** On Android, the TUN file descriptor is passed directly to Go via `std::os::unix::io::FromRawFd`, eliminating buffer copying between the JVM and native code.
 
 ### 5.2. Desktop (Windows/Linux/macOS)
 * **Wintun Layer:** Utilizing the fastest available Windows driver for throughput up to 10 Gbps.
@@ -99,7 +99,7 @@ Discovered strategies are exchanged via **Probabilistic Gossiping**:
 
 ## 6. Roadmap (Milestones)
 
-* **Phase 1: Foundation (0-2 months):** Rust core with `uTLS` support and basic defragmentation. CLI version release.
+* **Phase 1: Foundation (0-2 months):** Go core with `uTLS` support and basic defragmentation. CLI version release.
 * **Phase 2: Tactical (2-4 months):** Strategy Hunter implementation and TTL calibration. Android VpnService integration.
 * **Phase 3: Resilience (4-6 months):** QUIC-Stealth and Connection Migration modules. iOS NetworkExtension support.
 * **Phase 4: Critical Mass (6+ months):** Hydra-Net launch for anonymous config sharing. Goal: 100k nodes to test the "Fail-Open" hypothesis on national segments.
